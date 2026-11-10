@@ -1,0 +1,196 @@
+{
+  "ap.insufficient": [
+    {
+      "src": "/sfx/ap.insufficient.ogg",
+      "gain": 0.513
+    }
+  ],
+  "ap.spend": [
+    {
+      "src": "/sfx/ap.spend.ogg",
+      "gain": 1.884
+    }
+  ],
+  "decoy.deploy": [
+    {
+      "src": "/sfx/decoy.deploy.ogg",
+      "gain": 0.624
+    }
+  ],
+  "end.defeat": [
+    {
+      "src": "/sfx/end.defeat.ogg",
+      "gain": 0.537
+    }
+  ],
+  "end.draw": [
+    {
+      "src": "/sfx/end.draw.ogg",
+      "gain": 0.794
+    }
+  ],
+  "end.victory": [
+    {
+      "src": "/sfx/end.victory.ogg",
+      "gain": 0.596
+    }
+  ],
+  "enemy.activity": [
+    {
+      "src": "/sfx/enemy.activity.1.ogg",
+      "gain": 0.822
+    },
+    {
+      "src": "/sfx/enemy.activity.2.ogg",
+      "gain": 0.468
+    },
+    {
+      "src": "/sfx/enemy.activity.3.ogg",
+      "gain": 0.335
+    },
+    {
+      "src": "/sfx/enemy.activity.4.ogg",
+      "gain": 0.61
+    }
+  ],
+  "fleet.random": [
+    {
+      "src": "/sfx/fleet.random.ogg",
+      "gain": 0.638
+    }
+  ],
+  "fleet.ready": [
+    {
+      "src": "/sfx/fleet.ready.ogg",
+      "gain": 0.861
+    }
+  ],
+  "game.start": [
+    {
+      "src": "/sfx/game.start.ogg",
+      "gain": 1.0
+    }
+  ],
+  "move.ship": [
+    {
+      "src": "/sfx/move.ship.ogg",
+      "gain": 1.4,
+      "fadeAfterMs": 700,
+      "fadeOverMs": 1500
+    }
+  ],
+  "ping.negative": [
+    {
+      "src": "/sfx/ping.negative.ogg",
+      "gain": 0.394
+    }
+  ],
+  "ping.positive": [
+    {
+      "src": "/sfx/ping.positive.ogg",
+      "gain": 0.309
+    }
+  ],
+  "ping.send": [
+    {
+      "src": "/sfx/ping.send.ogg",
+      "gain": 0.302
+    }
+  ],
+  "ship.invalid": [
+    {
+      "src": "/sfx/ship.invalid.ogg",
+      "gain": 0.254
+    }
+  ],
+  "ship.pickup": [
+    {
+      "src": "/sfx/ship.pickup.ogg",
+      "gain": 2.0
+    }
+  ],
+  "ship.place": [
+    {
+      "src": "/sfx/ship.place.ogg",
+      "gain": 0.966
+    }
+  ],
+  "ship.rotate": [
+    {
+      "src": "/sfx/ship.rotate.ogg",
+      "gain": 0.944
+    }
+  ],
+  "fire.send": [
+    {
+      "src": "/sfx/fire.send.ogg",
+      "gain": 0.6
+    }
+  ],
+  "fire.hit": [
+    {
+      "src": "/sfx/fire.hit.ogg",
+      "gain": 0.891
+    }
+  ],
+  "fire.miss": [
+    {
+      "src": "/sfx/fire.miss.ogg",
+      "gain": 0.5
+    }
+  ],
+  "fire.sunk.enemy": [
+    {
+      "src": "/sfx/fire.sunk.enemy.ogg",
+      "gain": 0.6
+    }
+  ],
+  "fire.sunk.own": [
+    {
+      "src": "/sfx/fire.sunk.own.ogg",
+      "gain": 1.349
+    }
+  ],
+  "tool.autoswitch": [
+    {
+      "src": "/sfx/tool.autoswitch.ogg",
+      "gain": 0.1
+    }
+  ],
+  "turn.end": [
+    {
+      "src": "/sfx/turn.end.ogg",
+      "gain": 1.245
+    }
+  ],
+  "turn.start": [
+    {
+      "src": "/sfx/turn.start.ogg",
+      "gain": 0.407
+    }
+  ],
+  "ui.back": [
+    {
+      "src": "/sfx/ui.back.ogg",
+      "gain": 0.912
+    }
+  ],
+  "ui.click": [
+    {
+      "src": "/sfx/ui.click.ogg",
+      "gain": 0.813
+    }
+  ],
+  "ui.hover": [
+    {
+      "src": "/sfx/ui.hover.ogg",
+      "gain": 0.324
+    }
+  ],
+  "ui.toggle": [
+    {
+      "src": "/sfx/ui.toggle.ogg",
+      "gain": 0.966
+    }
+  ]
+}

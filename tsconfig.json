@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "types": ["node", "vite/client"]
+  },
+  "include": ["src", "tests"],
+  // Deferred: the in-browser sim lab screen and the behavior lab (src/lab) are kept on
+  // disk but unwired and untracked. Excluded so `tsc -b` doesn't typecheck it against the removed
+  // OPEN_SIMLAB action. (npm run simulate / src/sim is unaffected.)
+  "exclude": ["src/ui/screens/SimLab.tsx", "src/lab", "tests/lab-trace.test.ts"]
+}

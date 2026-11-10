@@ -1,0 +1,768 @@
+/* FLOTILLA — sterile war-fighting console. Dark only. */
+
+:root {
+  --bg: #0a0e12;
+  --bg-raise: #0e141b;
+  --panel: #111923;
+  --hairline: rgba(148, 170, 190, 0.14);
+  --hairline-strong: rgba(148, 170, 190, 0.28);
+  --text: #c7d3dd;
+  --text-dim: #6d7f8e;
+  --text-faint: #46555f;
+
+  --hit: #ff5544;
+  --hit-dim: rgba(255, 85, 68, 0.22);
+  --warn: #ffb347;
+  --warn-dim: rgba(255, 179, 71, 0.16);
+  --friend: #39d4c4;
+  --friend-dim: rgba(57, 212, 196, 0.16);
+  --miss: #55646f;
+
+  /* CPU fleet seats in the menu roster: yellow, green, violet. A bot crewing more than
+     one seat goes blue — that is the mirror-match cue. */
+  --seat-1: #ffb347;
+  --seat-1-dim: rgba(255, 179, 71, 0.16);
+  --seat-2: #39d4c4;
+  --seat-2-dim: rgba(57, 212, 196, 0.16);
+  --seat-3: #b98cff;
+  --seat-3-dim: rgba(185, 140, 255, 0.16);
+  --mirror: #5aa8ff;
+  --mirror-dim: rgba(90, 168, 255, 0.18);
+
+  --mono: 'JetBrains Mono', 'IBM Plex Mono', 'SF Mono', Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root { height: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: var(--mono);
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+button:disabled { cursor: default; opacity: 0.35; }
+
+h1, h2 { font-weight: 600; letter-spacing: 0.06em; }
+
+.accent { color: var(--friend); }
+
+.micro-label {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* ───────── buttons ───────── */
+
+.btn-primary {
+  padding: 10px 22px;
+  border: 1px solid var(--friend);
+  color: var(--friend);
+  background: var(--friend-dim);
+  letter-spacing: 0.18em;
+  font-size: 12px;
+  transition: background 120ms linear, box-shadow 120ms linear;
+}
+.btn-primary:hover:not(:disabled) { background: rgba(57, 212, 196, 0.28); box-shadow: 0 0 12px rgba(57, 212, 196, 0.25); }
+
+.btn-choice {
+  padding: 7px 14px;
+  border: 1px solid var(--hairline-strong);
+  color: var(--text);
+  letter-spacing: 0.12em;
+  font-size: 11px;
+  background: var(--bg-raise);
+  transition: border-color 120ms linear, color 120ms linear;
+}
+.btn-choice:hover:not(:disabled) { border-color: var(--text-dim); }
+.btn-choice.selected { border-color: var(--friend); color: var(--friend); background: var(--friend-dim); }
+
+.btn-micro {
+  padding: 3px 8px;
+  border: 1px solid var(--hairline);
+  color: var(--text-dim);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  transition: color 100ms linear, border-color 100ms linear;
+}
+.btn-micro:hover:not(:disabled) { color: var(--text); border-color: var(--hairline-strong); }
+.btn-micro.selected { color: var(--friend); border-color: var(--friend); }
+
+/* ───────── menu ───────── */
+
+.menu-screen {
+  position: relative;
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(1200px 500px at 50% -10%, rgba(57, 212, 196, 0.05), transparent),
+    var(--bg);
+}
+.menu-core { width: 420px; display: flex; flex-direction: column; gap: 26px; padding: 40px 0; }
+.wordmark {
+  font-size: 44px;
+  letter-spacing: 0.42em;
+  color: var(--text);
+  text-shadow: 0 0 24px rgba(57, 212, 196, 0.25);
+}
+.menu-sub { margin-top: -18px; }
+.menu-section { display: flex; flex-direction: column; gap: 8px; }
+.choice-row { display: flex; gap: 8px; }
+.choice-row .btn-choice { flex: 1; }
+/* Six bots don't fit one row at 420px: fixed 3x2 so the cells stay even and
+   the grid doesn't reflow as the roster grows. */
+.choice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.choice-grid .btn-choice {
+  padding-left: 4px;
+  padding-right: 4px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.menu-hint { font-size: 11px; color: var(--text-faint); min-height: 16px; }
+
+/* Roster: colour = which seat holds the bot. */
+.seat-legend { display: flex; gap: 8px; }
+.seat-chip {
+  flex: 1;
+  padding: 4px 6px;
+  border: 1px solid var(--hairline-strong);
+  background: var(--bg-raise);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.seat-chip.active { border-style: dashed; }
+.seat-chip.seat-1 { color: var(--seat-1); border-color: var(--seat-1); }
+.seat-chip.seat-2 { color: var(--seat-2); border-color: var(--seat-2); }
+.seat-chip.seat-3 { color: var(--seat-3); border-color: var(--seat-3); }
+.btn-fleet { position: relative; padding-bottom: 14px; }
+.btn-fleet.seat-1 { border-color: var(--seat-1); color: var(--seat-1); background: var(--seat-1-dim); }
+.btn-fleet.seat-2 { border-color: var(--seat-2); color: var(--seat-2); background: var(--seat-2-dim); }
+.btn-fleet.seat-3 { border-color: var(--seat-3); color: var(--seat-3); background: var(--seat-3-dim); }
+.btn-fleet.seat-mirror { border-color: var(--mirror); color: var(--mirror); background: var(--mirror-dim); }
+/* Pips spell out which seats a box holds when one bot crews several. */
+.fleet-pips { position: absolute; left: 0; right: 0; bottom: 4px; display: flex; justify-content: center; gap: 3px; }
+.fleet-pip { width: 5px; height: 5px; border-radius: 50%; }
+.fleet-pip.seat-1 { background: var(--seat-1); }
+.fleet-pip.seat-2 { background: var(--seat-2); }
+.fleet-pip.seat-3 { background: var(--seat-3); }
+/* Three blurbs' worth of room, always, so the roster doesn't jump. */
+/* Blurbs run one or two lines; an even gap keeps them apart, and the min-height reserves
+   three two-line blurbs so picking a bot never shifts everything below it. */
+.fleet-blurbs { display: flex; flex-direction: column; gap: 8px; min-height: 112px; }
+.fleet-tag { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+.fleet-tag.seat-1 { background: var(--seat-1); }
+.fleet-tag.seat-2 { background: var(--seat-2); }
+.fleet-tag.seat-3 { background: var(--seat-3); }
+.gameover-archive { color: var(--text-faint); text-align: center; }
+.menu-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.menu-version { position: absolute; top: 10px; right: 14px; font-size: 11px; color: var(--text-faint); }
+
+/* ───────── rules pane (HOW TO PLAY) ───────── */
+
+.rules-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(2, 4, 6, 0.78);
+  backdrop-filter: blur(2px);
+}
+.rules-pane {
+  width: min(1040px, 100%);
+  /* Sized to fit a laptop viewport whole; the scrollbar is a tiny-window
+     safety valve only — the layout must never need it. */
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 22px 28px 26px;
+  background: #04070a;
+  border: 1px solid var(--hairline-strong);
+  box-shadow: 0 0 40px rgba(57, 212, 196, 0.08), 0 0 2px rgba(57, 212, 196, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.rules-head { display: flex; justify-content: space-between; align-items: center; }
+.rules-title { font-size: 20px; letter-spacing: 0.3em; color: var(--text); margin-top: -4px; }
+.rules-lede { font-size: 12px; color: var(--text-dim); border-left: 2px solid var(--friend); padding-left: 12px; }
+.rules-flavor { font-size: 11px; font-style: italic; color: var(--text-dim); text-align: center; margin-top: 2px; }
+.rules-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: 16px 28px; align-items: start; }
+.rules-col { display: flex; flex-direction: column; gap: 14px; }
+.rules-section { display: flex; flex-direction: column; gap: 6px; }
+.rules-section p { font-size: 12px; color: var(--text); }
+.rules-em { color: var(--friend); }
+.rules-actions { display: flex; flex-direction: column; gap: 8px; }
+.rules-action {
+  display: grid;
+  grid-template-columns: 70px 44px 1fr;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 12px;
+  padding: 6px 8px;
+  border: 1px solid var(--hairline);
+  background: var(--bg-raise);
+}
+.rules-action-name { color: var(--friend); letter-spacing: 0.14em; }
+.rules-action-cost { color: var(--warn); font-size: 11px; white-space: nowrap; }
+.rules-action-desc { color: var(--text); }
+
+/* ───────── boards ───────── */
+
+.board { display: flex; flex-direction: column; gap: 6px; }
+.board-title { font-size: 10px; letter-spacing: 0.22em; color: var(--text-dim); }
+.board-grid {
+  display: grid;
+  grid-template-columns: 22px repeat(10, 34px);
+  grid-auto-rows: 34px;
+  gap: 0;
+  width: fit-content;
+  border: 1px solid var(--hairline-strong);
+  background: var(--bg-raise);
+  padding: 4px;
+}
+.board-row { display: contents; }
+.gutter {
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  color: var(--text-faint);
+  letter-spacing: 0.08em;
+}
+.cell {
+  position: relative;
+  border: 1px solid var(--hairline);
+  background: transparent;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  transition: background 100ms linear;
+  overflow: hidden;
+}
+.board-targeting .cell:hover {
+  outline: 1px solid var(--friend);
+  outline-offset: -1px;
+  background: rgba(57, 212, 196, 0.07);
+}
+.board-targeting .cell:hover::after,
+.board-targeting .cell:hover::before {
+  content: '';
+  position: absolute;
+  background: rgba(57, 212, 196, 0.35);
+}
+.board-targeting .cell:hover::after { left: 0; right: 0; top: 50%; height: 1px; }
+.board-targeting .cell:hover::before { top: 0; bottom: 0; left: 50%; width: 1px; }
+.board-dimmed .cell { opacity: 0.75; }
+/* A fleet that is out of the engagement: the grid stays as a record, but it reads as
+   wreckage rather than as water you can still shoot at. */
+.board-wrecked { filter: grayscale(1); opacity: 0.45; }
+.board-wrecked .board-title { color: var(--text-dim); }
+.board-wrecked .cell { cursor: default; }
+
+.cell-glyph { position: relative; z-index: 2; }
+.cell-tag {
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  font-size: 7px;
+  letter-spacing: 0.05em;
+  color: var(--warn);
+  z-index: 2;
+}
+.ping-wash { position: absolute; inset: 0; background: var(--warn); z-index: 0; }
+.ping-center { color: rgba(255, 179, 71, 0.55); font-size: 9px; }
+.ping-center.contact { color: var(--warn); }
+
+.cell.own-ship { background: rgba(57, 212, 196, 0.2); border-color: rgba(57, 212, 196, 0.45); }
+.cell.own-ship.damaged { background: var(--hit-dim); border-color: var(--hit); color: var(--hit); }
+/* A sunk ship reads as ONE red-outlined wreck. border-width:0 is load-bearing: ::after
+   insets resolve against the padding box, so a cell border would gap the outline. */
+.cell.own-ship.sunk {
+  /* Stripe period 8px ≈ (34px cell / √2) / 3 keeps the hatch in phase across cells. */
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 85, 68, 0.22) 0 2.5px,
+    rgba(255, 85, 68, 0.06) 2.5px 8px
+  );
+  border-width: 0;
+  color: rgba(255, 85, 68, 0.8);
+}
+/* Shared wreck outline: own sunk hulls and confirmed enemy kills. */
+.cell.wreck::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border: 0 solid var(--hit);
+  z-index: 1;
+}
+/* Must out-specify the `border: 0 solid` shorthand above (0,2,1) or nothing draws. */
+.cell.wreck.wreck-n::after { border-top-width: 2px; }
+.cell.wreck.wreck-s::after { border-bottom-width: 2px; }
+.cell.wreck.wreck-w::after { border-left-width: 2px; }
+.cell.wreck.wreck-e::after { border-right-width: 2px; }
+/* Per-cell rings would shatter the hull outline, which already says it. */
+.cell.wreck.incoming,
+.cell.wreck.fire-sunk { box-shadow: none; }
+/* A live hull wears the same one-unit perimeter in fleet teal (border-width:0 as above),
+   so a hull overlapping a spent decoy still shows its full extent. */
+.cell.own-ship.hull { border-width: 0; }
+.cell.hull::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border: 0 solid rgba(57, 212, 196, 0.55);
+  z-index: 1;
+}
+.cell.hull.hull-n::after { border-top-width: 1px; }
+.cell.hull.hull-s::after { border-bottom-width: 1px; }
+.cell.hull.hull-w::after { border-left-width: 1px; }
+.cell.hull.hull-e::after { border-right-width: 1px; }
+.cell.own-decoy { color: var(--friend); background: rgba(57, 212, 196, 0.08); border-color: rgba(57, 212, 196, 0.3); }
+.cell.own-decoy.spent { color: var(--text-faint); background: transparent; border-color: var(--hairline); }
+.cell.incoming { box-shadow: inset 0 0 0 2px rgba(255, 179, 71, 0.35); }
+
+/* Lifted above --miss (kept for log text) so the dot stays legible over ping
+   washes of any hue; the dark halo separates it from fresh red/amber washes. */
+.cell.fire-miss {
+  color: #9db0bd;
+  font-size: 20px;
+  text-shadow: 0 0 2px var(--bg), 0 0 5px rgba(10, 14, 18, 0.85);
+}
+/* MOVE wake intel: water the enemy just vacated. Cool blue so the trail reads
+   apart from amber sonar washes and red strikes; stale trails dim out. */
+.cell.wake-mark { color: rgba(90, 176, 255, 0.85); background: rgba(90, 176, 255, 0.1); }
+/* Size only the ≈ itself — a shot over a wake must render its ✕/· like any other. */
+.cell.wake-mark:not(.fire-miss):not(.fire-hit) { font-size: 13px; }
+.cell.fire-hit { color: var(--hit); background: var(--hit-dim); }
+/* Fallback kill marker when the hull can't be pinned (see sunkEnemyHulls). */
+.cell.fire-sunk { box-shadow: inset 0 0 0 1px rgba(255, 85, 68, 0.55); }
+
+/* A kill confirmed on the targeting grid: the same red hull as your own wrecks,
+   laid over the hit marks that earned it, which stay as the glyphs inside. */
+.cell.enemy-wreck {
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 85, 68, 0.22) 0 2.5px,
+    rgba(255, 85, 68, 0.06) 2.5px 8px
+  );
+  border-width: 0;
+  color: var(--hit);
+}
+
+.cell.reticle { animation: reticle 600ms ease-out; }
+@keyframes reticle {
+  0% { box-shadow: inset 0 0 0 8px rgba(255, 85, 68, 0.0), 0 0 0 6px rgba(255, 85, 68, 0.6); }
+  100% { box-shadow: inset 0 0 0 0 rgba(255, 85, 68, 0.0), 0 0 0 0 rgba(255, 85, 68, 0); }
+}
+
+.cell.cell-preview { background: rgba(57, 212, 196, 0.18); outline: 1px solid rgba(57, 212, 196, 0.5); outline-offset: -1px; }
+.cell.cell-preview-bad { background: rgba(255, 85, 68, 0.18); outline: 1px solid rgba(255, 85, 68, 0.6); outline-offset: -1px; }
+.cell.rejected { animation: reject 320ms linear; }
+@keyframes reject {
+  0%, 60% { background: rgba(255, 85, 68, 0.45); }
+  100% { background: transparent; }
+}
+
+/* ───────── panels ───────── */
+
+.ap-bar { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+.ap-segments { display: flex; gap: 3px; }
+.ap-seg { width: 22px; height: 10px; border: 1px solid var(--hairline-strong); background: transparent; }
+.ap-seg.on { background: var(--friend); border-color: var(--friend); box-shadow: 0 0 6px rgba(57, 212, 196, 0.4); }
+.ap-count { font-size: 11px; color: var(--text-dim); }
+
+.fleet-status, .deploy-queue { display: flex; flex-direction: column; gap: 4px; }
+.fleet-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border: 1px solid var(--hairline);
+  background: var(--bg-raise);
+  min-height: 26px;
+}
+.fleet-row.sunk { opacity: 0.4; }
+.fleet-row.sunk .fleet-name { text-decoration: line-through; }
+.fleet-row.active { border-color: var(--friend); }
+.fleet-row.placed { opacity: 0.65; }
+.fleet-name { font-size: 10px; letter-spacing: 0.14em; width: 92px; color: var(--text); }
+.standings { display: flex; flex-direction: column; gap: 4px; }
+.gameover-standings { max-width: 360px; margin: 0 auto; }
+.standing-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border: 1px solid var(--hairline);
+  background: var(--bg-raise);
+  min-height: 26px;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+.standing-row.mine { border-color: var(--friend); }
+.standing-row.out { opacity: 0.4; }
+.standing-row.out .standing-name { text-decoration: line-through; }
+.standing-rank { width: 12px; color: var(--text-dim); }
+.standing-name { flex: 1; color: var(--text); }
+.standing-force { width: 54px; text-align: right; color: var(--text); }
+.standing-ships { width: 56px; text-align: right; color: var(--text-dim); }
+
+.fleet-blocks { display: flex; gap: 2px; }
+.dmg-block { width: 10px; height: 10px; background: rgba(57, 212, 196, 0.35); border: 1px solid rgba(57, 212, 196, 0.5); }
+.dmg-block.hit { background: var(--hit); border-color: var(--hit); }
+.dmg-block.decoy-avail { background: var(--warn-dim); border-color: var(--warn); }
+.fleet-state { font-size: 9px; letter-spacing: 0.12em; color: var(--warn); margin-left: auto; }
+
+.event-log-wrap { display: flex; flex-direction: column; gap: 6px; min-height: 0; flex: 1 1 0; }
+.event-log {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden; /* long lines wrap (see .log-text); never a horizontal scrollbar */
+  border: 1px solid var(--hairline);
+  background: var(--bg-raise);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.log-line { font-size: 11px; display: flex; gap: 6px; color: var(--text-dim); }
+/* min-width: 0 lets the flex item shrink below its content so text wraps
+   instead of pushing the row wide. */
+.log-text { min-width: 0; }
+.log-turn { color: var(--text-faint); min-width: 30px; }
+.log-sep { color: var(--text-faint); }
+.tone-hit .log-text { color: var(--hit); }
+.tone-miss .log-text { color: var(--miss); }
+.tone-ping .log-text { color: var(--warn); }
+.tone-friendly .log-text { color: var(--friend); }
+.tone-alert .log-text { color: var(--hit); letter-spacing: 0.06em; }
+.tone-divider { color: var(--text-faint); letter-spacing: 0.1em; margin-top: 5px; }
+
+.action-bar { display: flex; gap: 6px; padding-top: 10px; flex-wrap: wrap; justify-content: center; }
+.btn-action {
+  position: relative; /* anchors the hotkey chip */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 14px;
+  border: 1px solid var(--hairline-strong);
+  background: var(--bg-raise);
+  min-width: 74px;
+  transition: border-color 100ms linear;
+}
+.action-key {
+  position: absolute;
+  top: 1px;
+  left: 4px;
+  font-size: 9px;
+  color: var(--text-faint);
+  letter-spacing: 0;
+}
+.btn-action.selected .action-key { color: var(--friend); }
+.hotkey-hint {
+  text-align: center;
+  font-size: 9px;
+  color: var(--text-faint);
+  letter-spacing: 0.14em;
+  padding-top: 5px;
+}
+.btn-action:hover:not(:disabled) { border-color: var(--text-dim); }
+.btn-action.selected { border-color: var(--friend); background: var(--friend-dim); }
+.btn-action.selected .action-name { color: var(--friend); }
+.btn-action.end-turn { border-color: rgba(255, 179, 71, 0.4); }
+.btn-action.end-turn:hover:not(:disabled) { border-color: var(--warn); }
+.btn-action.end-turn .action-name { color: var(--warn); }
+.action-name { font-size: 11px; letter-spacing: 0.16em; }
+.action-cost { font-size: 9px; color: var(--text-faint); letter-spacing: 0.1em; }
+
+/* Lives in the game header; the body drops down over the boards, anchored to
+   the header (position: relative there) so it never overflows the viewport. */
+.rules-panel { display: flex; }
+.rules-body {
+  position: absolute;
+  top: calc(100% + 1px);
+  right: 12px;
+  z-index: 20;
+  width: min(380px, calc(100vw - 24px));
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid var(--hairline-strong);
+  background: var(--panel);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rules-body p { font-size: 10.5px; color: var(--text-dim); }
+.rules-body b { color: var(--text); font-weight: 600; }
+.rules-body .rules-body-head {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--hairline);
+  color: var(--friend);
+  letter-spacing: 0.12em;
+}
+
+/* ───────── game layout ───────── */
+
+.game-screen, .spectate-screen { height: 100%; display: flex; flex-direction: column; }
+.game-header {
+  position: relative; /* anchors the RULES REF dropdown */
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--hairline);
+  background: var(--bg-raise);
+}
+.wordmark-small { letter-spacing: 0.34em; font-size: 14px; color: var(--text); }
+.header-stat { font-size: 10px; letter-spacing: 0.18em; color: var(--text-dim); }
+.header-stat.accent { color: var(--friend); }
+.header-spacer { flex: 1; }
+
+.game-columns,
+.spectate-columns {
+  /* Content-sized tracks (never 1fr) so surplus width becomes equal margins; `safe`
+     keeps the top edge reachable on short viewports. */
+  flex: 1;
+  min-height: 0; /* lets the log scroll instead of growing the page */
+  overflow-y: auto; /* safety valve on very short viewports */
+  display: grid;
+  gap: 30px;
+  padding: 24px;
+  justify-content: safe center;
+  align-content: safe center; /* centre the console as ONE block */
+  align-items: stretch;
+}
+.game-columns { grid-template-columns: auto auto minmax(280px, 400px); }
+.spectate-columns { grid-template-columns: auto auto minmax(260px, 380px); }
+/* MELEE: a third fleet means a third board. Cells shrink so three grids plus the
+   log still fit one row before the narrow-layout stages take over. */
+.spectate-columns.wide { grid-template-columns: auto auto auto minmax(220px, 320px); gap: 20px; }
+.spectate-columns.wide .board-grid {
+  grid-template-columns: 18px repeat(10, 26px);
+  grid-auto-rows: 26px;
+}
+.enemy-boards { display: flex; gap: 20px; align-items: flex-start; }
+/* All three melee grids (own + two rivals) share one cell size so they read as a row. */
+.game-columns--melee .board-grid {
+  grid-template-columns: 18px repeat(10, 27px);
+  grid-auto-rows: 27px;
+}
+.col-own, .col-enemy { display: flex; flex-direction: column; gap: 4px; align-self: start; }
+/* The action bar is wider than the grid it belongs to; share a centre axis so
+   the targeting grid sits centred over its own buttons. */
+.col-enemy { align-items: center; }
+.col-log { display: flex; flex-direction: column; min-width: 0; min-height: 0; align-self: stretch; }
+
+/* ───────── narrow layouts ─────────
+   ≤1150px log drops below the boards; ≤840px columns dissolve (`display: contents`)
+   and `order` stacks everything; ≤430px phone-width cells. */
+
+/* Three boards drop the log a stage earlier. */
+@media (max-width: 1500px) {
+  .spectate-columns.wide { grid-template-columns: auto auto auto; }
+  .spectate-columns.wide .col-log { grid-column: 1 / -1; align-self: start; }
+  .spectate-columns.wide .col-log .event-log-wrap { flex: none; min-height: auto; }
+  .spectate-columns.wide .col-log .event-log { flex: none; height: 200px; }
+}
+
+@media (max-width: 1150px) {
+  .spectate-columns.wide { grid-template-columns: auto auto; }
+  .game-columns, .spectate-columns {
+    grid-template-columns: auto auto;
+    align-content: start; /* top-anchored; vertical surplus goes below, not above */
+  }
+  .col-log { grid-column: 1 / -1; align-self: start; }
+  /* Pin the log's height. min-height must go back to auto: in this overflowing,
+     height-bound container min-height:0 would squash the log to nothing. */
+  .col-log .event-log-wrap { flex: none; min-height: auto; }
+  .col-log .event-log { flex: none; height: 200px; }
+}
+
+@media (max-width: 840px) {
+  .spectate-columns.wide { grid-template-columns: minmax(0, auto); }
+  .game-columns,
+  .spectate-columns {
+    grid-template-columns: minmax(0, auto);
+    gap: 16px;
+    align-content: start; /* start at the top and scroll; no centring gap */
+    justify-items: center;
+  }
+  .col-own, .col-enemy, .col-log { display: contents; }
+  /* Stack order (boards first, status + log at the bottom). */
+  .col-own > .board { order: 1; }
+  /* The melee board pair dissolves too, so its grids order themselves. */
+  .enemy-boards { display: contents; }
+  .col-enemy .board { order: 2; }
+  .ap-bar { order: 3; }
+  .action-bar { order: 4; padding-top: 0; }
+  /* Touch layout: no keyboard, and the un-ordered hint would sort above the boards. */
+  .hotkey-hint { display: none; }
+  .fleet-status { order: 5; }
+  .event-log-wrap { order: 6; }
+  /* `display: contents` dissolves the column boxes, so the former column
+     children size themselves: pin them to the board's width. */
+  .ap-bar, .action-bar, .fleet-status, .event-log-wrap {
+    width: 100%;
+    max-width: 380px;
+  }
+  .ap-bar { padding: 0; }
+  .event-log-wrap .event-log { flex: none; height: 180px; }
+}
+
+@media (max-width: 430px) {
+  .game-columns, .spectate-columns { padding: 12px; }
+  .board-grid {
+    grid-template-columns: 18px repeat(10, min(30px, calc((100vw - 56px) / 10)));
+    grid-auto-rows: min(30px, calc((100vw - 56px) / 10));
+  }
+}
+
+/* ───────── replay ───────── */
+
+.replay-scrub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--hairline);
+  background: var(--bg-raise);
+}
+.replay-scrub input[type='range'] { flex: 1; min-width: 120px; accent-color: var(--friend); background: none; }
+/* ❚❚ and ▶ are different widths; pin the button so toggling play doesn't resize the slider. */
+.replay-play { width: 34px; }
+/* Turn counter reserves three digits so the status beside it holds still past T9 / T99. */
+.header-turn { min-width: 4ch; }
+/* Fixed at two rows: a busy ply (shot + sink + turn roll + game over) wraps, and the boards
+   below are centred, so a caption that grows or shrinks would bob them every step. */
+.replay-caption {
+  display: flex;
+  gap: 0 18px;
+  justify-content: center;
+  align-content: flex-start;
+  flex-wrap: wrap;
+  padding: 8px 18px 0;
+  height: 40px;
+  overflow: hidden;
+}
+.replay-caption-line { font-size: 11px; line-height: 16px; letter-spacing: 0.1em; color: var(--text-dim); }
+.replay-caption-line .log-text { color: inherit; }
+.replay-caption-line.tone-hit .log-text { color: var(--hit); }
+.replay-caption-line.tone-miss .log-text { color: var(--miss); }
+.replay-caption-line.tone-ping .log-text { color: var(--warn); }
+.replay-caption-line.tone-friendly .log-text { color: var(--friend); }
+.replay-caption-line.tone-alert .log-text { color: var(--hit); letter-spacing: 0.06em; }
+
+/* ───────── placement / gameover ───────── */
+
+.placement-screen { min-height: 100%; display: flex; justify-content: safe center; align-items: safe center; gap: 40px; padding: 30px; flex-wrap: wrap; }
+.placement-side { display: flex; flex-direction: column; gap: 14px; width: 280px; }
+.placement-controls { display: flex; flex-direction: column; gap: 8px; }
+
+.gameover-screen { min-height: 100%; display: flex; flex-direction: column; align-items: center; gap: 26px; padding: 40px 20px; }
+.gameover-head { text-align: center; display: flex; flex-direction: column; gap: 8px; }
+.gameover-head h2 { font-size: 26px; letter-spacing: 0.24em; }
+.gameover-boards { display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; }
+.gameover-board { display: flex; flex-direction: column; gap: 8px; }
+.stat-row { display: flex; gap: 16px; }
+.gameover-actions { display: flex; gap: 12px; }
+
+/* scrollbars */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--hairline-strong); }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* MOVE tool: ships that can move this turn, and the armed ship. */
+.cell.move-ready { box-shadow: inset 0 0 0 1px rgba(57, 212, 196, 0.55); }
+.cell.move-selected {
+  outline: 2px solid var(--friend);
+  outline-offset: -2px;
+  box-shadow: 0 0 10px rgba(57, 212, 196, 0.45);
+}
+.move-controls { display: flex; gap: 2px; }
+.move-controls .btn-micro { padding: 2px 5px; }
+
+/* ───────── sound control ───────── */
+
+.sfx-control {
+  position: fixed;
+  right: 14px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 9px;
+  background: var(--bg-raise);
+  border: 1px solid var(--hairline);
+  opacity: 0.35;
+  transition: opacity 0.15s;
+  z-index: 50;
+}
+.sfx-control:hover { opacity: 1; }
+.sfx-mute { font-size: 13px; line-height: 1; }
+.sfx-control input[type='range'] {
+  width: 72px;
+  accent-color: var(--friend);
+  background: none;
+}
+
+/* ───────── screenshot control ───────── */
+
+/* Mirrors the sound control in the opposite corner, but fainter — meant to be
+   nearly invisible until sought out. Excluded from its own captures. */
+.screenshot-control {
+  position: fixed;
+  left: 14px;
+  bottom: 12px;
+  padding: 5px 9px;
+  font-size: 13px;
+  line-height: 1;
+  background: var(--bg-raise);
+  border: 1px solid var(--hairline);
+  opacity: 0.15;
+  transition: opacity 0.15s;
+  z-index: 50;
+}
+.screenshot-control:hover { opacity: 1; }
+
+/* MELEE special tools: a second action row under the core four. Dimmed until the
+   damage that unlocks them lands, struck through once spent. */
+.action-bar--tools {
+  margin-top: 2px;
+}
+.btn-tool .action-name {
+  letter-spacing: 0.08em;
+}
+.btn-tool:disabled {
+  opacity: 0.32;
+}
+.btn-tool:disabled .action-cost {
+  text-decoration: line-through;
+}
