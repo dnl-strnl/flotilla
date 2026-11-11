@@ -112,7 +112,7 @@ h1, h2 { font-weight: 600; letter-spacing: 0.06em; }
     radial-gradient(1200px 500px at 50% -10%, rgba(57, 212, 196, 0.05), transparent),
     var(--bg);
 }
-.menu-core { width: 420px; display: flex; flex-direction: column; gap: 26px; padding: 40px 0; }
+.menu-core { width: min(420px, 100%); display: flex; flex-direction: column; gap: 26px; padding: 40px 0; }
 .wordmark {
   font-size: 44px;
   letter-spacing: 0.42em;
@@ -639,6 +639,17 @@ h1, h2 { font-weight: 600; letter-spacing: 0.06em; }
 
 @media (max-width: 430px) {
   .game-columns, .spectate-columns { padding: 12px; }
+  /* Side gutter so the menu never runs edge to edge; the wordmark's wide tracking would
+     overflow a phone at 44px. */
+  .menu-screen { padding: 0 16px; }
+  .wordmark { font-size: 34px; letter-spacing: 0.36em; }
+  .menu-sub { font-size: 9px; letter-spacing: 0.16em; }
+  /* The fixed sound/screenshot corners would sit on the last buttons and log; reserve
+     room so every scroller ends clear of them. */
+  .menu-core { padding-bottom: 64px; }
+  .placement-screen { padding-bottom: 64px; }
+  .game-columns, .spectate-columns { padding-bottom: 64px; }
+  .game-header { padding: 8px 12px; gap: 8px 12px; }
   .board-grid {
     grid-template-columns: 18px repeat(10, min(30px, calc((100vw - 56px) / 10)));
     grid-auto-rows: min(30px, calc((100vw - 56px) / 10));
