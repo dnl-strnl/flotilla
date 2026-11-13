@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import type { BotName } from '../../ai';
-import { replayFrames, upgradeReplay, type PresetName, type Replay } from '../../engine';
+import { upgradeReplay, verifyReplay, type PresetName, type Replay } from '../../engine';
 import { RulesPane } from '../components/RulesPane';
 import {
   MODE_LABEL,
@@ -75,7 +75,7 @@ export function Menu(props: { dispatch: (a: UIAction) => void }) {
       if (replay.version !== 2 && replay.version !== 3) {
         throw new Error('unsupported replay version');
       }
-      replayFrames(replay);
+      if (!verifyReplay(replay)) throw new Error('replay from other rules');
       setReplayError(null);
       props.dispatch({
         t: 'OPEN_REPLAY',

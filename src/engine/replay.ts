@@ -21,8 +21,8 @@ export interface Replay {
   placements: AtLeastTwo<ShipPlacement[]>;
   // Full micro-action sequence, in order.
   actions: Action[];
-  // Full-truth event log (includes both sides' private events).
-  events: Event[];
+  // What the engine answered, one token per action (see digestOf). Events are re-derived.
+  digest: string;
   // The game ended by this player striking colors after the last action. Out-of-band, not
   // an actions[] entry — see engine forfeit().
   forfeit?: PlayerId;
@@ -38,14 +38,13 @@ export function exportReplay(
   forfeitBy?: PlayerId,
 ): Replay {
   return structuredClone({
-    // Two-fleet exports stay byte-identical to every replay already in the wild.
     version: (placements.length > 2 ? 3 : 2) as 2 | 3,
     config,
     seed,
     firstPlayer,
     placements,
     actions,
-    events,
+    digest: digestOf(events),
     ...(forfeitBy !== undefined ? { forfeit: forfeitBy } : {}),
   });
 }
@@ -77,8 +76,43 @@ export function upgradeReplay(replay: Replay): Replay {
     actions: replay.actions.map(
       (a) => ({ ...a, type: legacy(a.type, 'SHOT', 'FIRE') }) as Action,
     ),
-    events: replay.events.map((e) => ({ ...e, type: legacy(e.type, 'shot', 'fire') }) as Event),
   };
+}
+
+// Shell H/M/S, sweep c/'.', ECHO occupancy base-36, MOVE '>', DECOY 'd', PASS '-'.
+export function digestOf(events: readonly Event[]): string {
+  let out = '';
+  for (const e of events) {
+    switch (e.type) {
+      case 'fire':
+        out += e.reported[0];
+        break;
+      case 'ping':
+      case 'scan':
+        out += e.contact ? 'c' : '.';
+        break;
+      case 'echo':
+        out += e.occupancy.toString(36);
+        break;
+      case 'move':
+        out += '>';
+        break;
+      case 'decoyPlaced':
+        out += 'd';
+        break;
+      case 'passed':
+        out += '-';
+        break;
+      default:
+        break;
+    }
+  }
+  return out;
+}
+
+// Does today's engine still answer what the file recorded? Throws on an illegal action.
+export function verifyReplay(replay: Replay): boolean {
+  return digestOf(runReplay(replay).events) === replay.digest;
 }
 
 export function replayFrames(saved: Replay): ReplayFrame[] {

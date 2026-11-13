@@ -34,7 +34,7 @@ function replaySink(): Plugin {
           try {
             const game = JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown>;
             mkdirSync(REPLAY_DIR, { recursive: true });
-            writeFileSync(resolve(REPLAY_DIR, replayFileName(game)), JSON.stringify(game, null, 2));
+            writeFileSync(resolve(REPLAY_DIR, replayFileName(game)), JSON.stringify(game));
             res.statusCode = 204;
           } catch {
             res.statusCode = 400;
