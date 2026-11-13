@@ -3,6 +3,7 @@ import {
   PRESETS,
   createGame,
   decodeAction,
+  digestOf,
   exportReplay,
   legalActionIds,
   mulberry32,
@@ -53,7 +54,7 @@ describe('replayFrames', () => {
     const frames = replayFrames(replay);
     const rerun = runReplay(replay);
     expect(JSON.stringify(frames.at(-1)!.state)).toBe(JSON.stringify(rerun.state));
-    expect(JSON.stringify(frames.flatMap((f) => f.events))).toBe(JSON.stringify(replay.events));
+    expect(digestOf(frames.flatMap((f) => f.events))).toBe(replay.digest);
   });
 
   it('throws on a tampered action log instead of rendering nonsense', () => {

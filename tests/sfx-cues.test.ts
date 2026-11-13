@@ -169,7 +169,7 @@ describe('replay playback audio', () => {
       { type: 'FIRE', cell: 41 },
       { type: 'PING', center: 0 },
     ],
-    events: [],
+    digest: '',
   };
 
   const appAt = (ply: number): AppState => ({
