@@ -91,6 +91,27 @@ export function unlockSfx(): void {
   if (audio && audio.state === 'suspended') void audio.resume();
 }
 
+// A long empty hall, built once: four seconds of stereo noise dying away.
+const HALL_S = 4;
+const HALL_WET = 0.9;
+let hall: ConvolverNode | null = null;
+
+function hallSend(audio: AudioContext, out: AudioNode): ConvolverNode {
+  if (hall) return hall;
+  const length = Math.floor(audio.sampleRate * HALL_S);
+  const impulse = audio.createBuffer(2, length, audio.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = impulse.getChannelData(ch);
+    for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / length) ** 3;
+  }
+  hall = audio.createConvolver();
+  hall.buffer = impulse;
+  const wet = audio.createGain();
+  wet.gain.value = HALL_WET;
+  hall.connect(wet).connect(out);
+  return hall;
+}
+
 export function playBeats(beats: Beat[]): void {
   if (!beats.length || muted) return;
   const audio = ensureContext();
@@ -114,6 +135,7 @@ export function playBeats(beats: Beat[]): void {
     const level = take.gain * (beat.gain ?? 1) * duck;
     trim.gain.value = level;
     source.connect(trim).connect(master);
+    if (beat.reverb) trim.connect(hallSend(audio, master));
     // start() must precede stop(): Web Audio throws InvalidStateError on a
     // stop() scheduled against a source that has never been started.
     source.start(startAt);
@@ -125,6 +147,64 @@ export function playBeats(beats: Beat[]): void {
       source.stop(fadeEnd);
     }
   }
+}
+
+// Title music: one looping stream through the master gain, so mute and level apply to it.
+const MUSIC_GAIN = 0.7;
+let music: { gain: GainNode; stop(fadeMs: number): void } | null = null;
+
+// Fades in as soon as the browser allows sound: at once where autoplay is permitted,
+// otherwise on the first click or key.
+export function startMusic(path: string, fadeInMs = 250): void {
+  const audio = ensureContext();
+  if (!audio || !master || music) return;
+  const el = new Audio(withBase(path));
+  el.loop = true;
+  // Buffer now, so the first gesture starts it without a network wait.
+  el.preload = 'auto';
+  el.load();
+  const gain = audio.createGain();
+  gain.gain.value = 0;
+  audio.createMediaElementSource(el).connect(gain).connect(master);
+
+  let begun = false;
+  const begin = () => {
+    unlockSfx();
+    el.play().then(
+      () => {
+        if (begun) return;
+        begun = true;
+        unhook();
+        gain.gain.setValueAtTime(0, audio.currentTime);
+        gain.gain.linearRampToValueAtTime(MUSIC_GAIN, audio.currentTime + fadeInMs / 1000);
+      },
+      () => {}, // blocked until a gesture; the listeners below try again
+    );
+  };
+  const unhook = () => {
+    window.removeEventListener('pointerdown', begin);
+    window.removeEventListener('keydown', begin);
+  };
+  window.addEventListener('pointerdown', begin);
+  window.addEventListener('keydown', begin);
+
+  music = {
+    gain,
+    stop(fadeMs) {
+      unhook();
+      begun = true;
+      gain.gain.cancelScheduledValues(audio.currentTime);
+      gain.gain.setValueAtTime(gain.gain.value, audio.currentTime);
+      gain.gain.linearRampToValueAtTime(0, audio.currentTime + fadeMs / 1000);
+      window.setTimeout(() => el.pause(), fadeMs);
+    },
+  };
+  begin();
+}
+
+export function stopMusic(fadeOutMs = 400): void {
+  music?.stop(fadeOutMs);
+  music = null;
 }
 
 export function setVolume(next: number): void {

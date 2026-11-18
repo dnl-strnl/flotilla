@@ -101,6 +101,67 @@ h1, h2 { font-weight: 600; letter-spacing: 0.06em; }
 .btn-micro:hover:not(:disabled) { color: var(--text); border-color: var(--hairline-strong); }
 .btn-micro.selected { color: var(--friend); border-color: var(--friend); }
 
+/* ───────── title ───────── */
+
+/* The card itself is painted on the canvas (screens/Title.tsx) so the composite-video
+   filter can run over the finished picture. */
+.title-screen {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--bg);
+}
+.title-canvas { display: block; width: 100%; height: 100%; }
+
+/* Lettering, laid over the filtered canvas. Sized in vmin/9 steps because the canvas lays
+   itself out against a 900-unit short side: 1 unit there = 0.111vmin here. */
+.title-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  text-align: center;
+}
+.title-wordmark {
+  font-size: 7.56vmin;
+  letter-spacing: 0.42em;
+  padding-left: 0.42em; /* balance the trailing tracking so the word sits centered */
+  line-height: 1;
+  color: #eaf6f5;
+  text-shadow: 0 0 2.67vmin rgba(57, 212, 196, 0.6);
+}
+.title-sub {
+  margin-top: 1.55vmin;
+  font-size: max(11px, 1.75vmin);
+  letter-spacing: 0.5em;
+  padding-left: 0.5em;
+  color: var(--text-dim);
+}
+.title-corner {
+  position: absolute;
+  top: 2.2vmin;
+  font-size: max(9px, 1.11vmin);
+  letter-spacing: 0.2em;
+  line-height: 1.7;
+  color: var(--text-faint);
+}
+.title-corner--left { left: 2.67vmin; }
+.title-corner--right { right: 2.67vmin; text-align: right; }
+.title-prompt {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 3.8vmin;
+  text-align: center;
+  font-size: max(10px, 1.33vmin);
+  letter-spacing: 0.4em;
+  color: var(--warn);
+  animation: title-blink 1.2s steps(1) infinite;
+}
+@keyframes title-blink { 55% { opacity: 0; } }
+
 /* ───────── menu ───────── */
 
 .menu-screen {
@@ -719,6 +780,23 @@ h1, h2 { font-weight: 600; letter-spacing: 0.06em; }
 }
 .move-controls { display: flex; gap: 2px; }
 .move-controls .btn-micro { padding: 2px 5px; }
+
+/* ───────── departure veil ───────── */
+
+/* Covers everything (and swallows clicks) while the screen sinks to black before a battle. */
+.depart-veil {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 100;
+  animation: depart-fall 4s ease-in forwards;
+}
+.depart-veil--lift {
+  pointer-events: none;
+  animation: depart-lift 0.7s ease-out forwards;
+}
+@keyframes depart-fall { from { opacity: 0; } to { opacity: 1; } }
+@keyframes depart-lift { from { opacity: 1; } to { opacity: 0; } }
 
 /* ───────── sound control ───────── */
 

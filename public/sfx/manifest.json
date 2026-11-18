@@ -68,6 +68,12 @@
   "game.start": [
     {
       "src": "/sfx/game.start.ogg",
+      "gain": 0.6
+    }
+  ],
+  "game.depart": [
+    {
+      "src": "/sfx/game.depart.ogg",
       "gain": 1.0
     }
   ],

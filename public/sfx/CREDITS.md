@@ -31,6 +31,7 @@ Credited because crediting good free work is decent, not because a licence deman
 | `fleet.random` | 1 |
 | `fleet.ready` | 1 |
 | `game.start` | 1 |
+| `game.depart` | 1 (two sounds mixed) |
 | `move.ship` | 1 |
 | `ping.negative` | 1 |
 | `ping.positive` | 1 |
