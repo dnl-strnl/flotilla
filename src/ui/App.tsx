@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef } from 'react';
+import { useEffect, useReducer, useRef, useState } from 'react';
 import {
   END_TURN_KEY,
   PING_HUES_LS_KEY,
@@ -6,6 +6,7 @@ import {
   TOOL_ORDER,
   initialState,
   reducer,
+  type UIAction,
 } from './state';
 import { cpuDelayMs } from './pacing';
 import { archiveGame, saveGameToDisk, type ArchivedGame } from './replayArchive';
@@ -13,6 +14,9 @@ import { sessionReplay } from './screens/GameOver';
 import { SfxControl } from './sfx/SfxControl';
 import { ScreenshotControl } from './components/ScreenshotControl';
 import { useSfx } from './sfx/useSfx';
+import { playBeats, startMusic, stopMusic } from './sfx/player';
+import { FLEET } from '../engine';
+import { Title } from './screens/Title';
 import { Menu } from './screens/Menu';
 import { Placement } from './screens/Placement';
 import { Game } from './screens/Game';
@@ -20,11 +24,53 @@ import { GameOver } from './screens/GameOver';
 import { Spectate } from './screens/Spectate';
 import { Replay } from './screens/Replay';
 
+// How long the screen takes to sink to black before a battle begins.
+const DEPART_MS = 4000;
+// After the black lifts, how long the CPU holds its first move so the board can be taken in.
+const SETTLE_MS = 3500;
+
 export default function App() {
   const [app, rawDispatch] = useReducer(reducer, initialState);
   // Sound is a wrapper around dispatch, never a participant in it: the hook
   // watches the states the reducer produces and plays what cues.ts decided.
-  const dispatch = useSfx(app, rawDispatch);
+  const sfxDispatch = useSfx(app, rawDispatch);
+  const [titled, setTitled] = useState(false);
+
+  // Departure: the press that actually begins a battle (CONFIRM DEPLOYMENT, or OBSERVE
+  // when no one is playing) is held back while the screen sinks to black, then lifts
+  // on the game.
+  const [veil, setVeil] = useState<'fall' | 'lift' | null>(null);
+  const departure = useRef(0);
+  const [settling, setSettling] = useState(false);
+  useEffect(() => () => window.clearTimeout(departure.current), []);
+  const dispatch = (ui: UIAction) => {
+    const begins =
+      (ui.t === 'START_SETUP' && !ui.setup.human) ||
+      (ui.t === 'CONFIRM_PLACEMENT' &&
+        app.screen.kind === 'placement' &&
+        app.screen.working.length === FLEET.length);
+    if (!begins) return sfxDispatch(ui);
+    if (veil) return;
+    setVeil('fall');
+    playBeats([{ cue: 'game.depart', at: 0, reverb: true }]);
+    departure.current = window.setTimeout(() => {
+      sfxDispatch(ui);
+      setVeil('lift');
+      setSettling(true);
+      departure.current = window.setTimeout(() => setSettling(false), SETTLE_MS);
+    }, DEPART_MS);
+  };
+
+  // The theme runs under the title card, the menu and fleet placement, and stops on
+  // the departure press.
+  // Not when framed: an embedded preview of the game should stay silent.
+  const themed =
+    (app.screen.kind === 'menu' || app.screen.kind === 'placement') && !veil && window.self === window.top;
+  useEffect(() => {
+    if (!themed) return;
+    startMusic('/audio/title.ogg');
+    return () => stopMusic();
+  }, [themed]);
 
   // CPU playback driver. Timing ONLY — every decision happens inside the
   // reducer via the engine. One micro-action per tick, skippable elsewhere.
@@ -34,6 +80,7 @@ export default function App() {
     if (session.bots[session.state.activePlayer] === null) return;
     if (app.screen.kind === 'spectate' && app.screen.paused) return;
     if (app.screen.kind !== 'game' && app.screen.kind !== 'spectate') return;
+    if (settling) return;
     const base = app.screen.kind === 'spectate' ? app.screen.speedMs : 400;
     // Human→CPU handoff: the flip at the tail ended a human turn (flips always
     // push turnEnded then turnStarted adjacently — see engine/step.ts endTurn).
@@ -45,7 +92,7 @@ export default function App() {
     const delay = cpuDelayMs(base, session.events, Math.random, handoff);
     const id = window.setTimeout(() => dispatch({ t: 'CPU_STEP' }), delay);
     return () => window.clearTimeout(id);
-  }, [app]);
+  }, [app, settling]);
 
   // Replay playback driver. Same shape as the CPU driver above: timing only,
   // every cursor change goes through the reducer.
@@ -109,7 +156,7 @@ export default function App() {
   // so the keys mirror the action-bar buttons exactly.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.metaKey || e.ctrlKey || e.altKey || veil === 'fall') return;
       const screen = app.screen;
       if (screen.kind === 'placement') {
         if (e.key === 'r' || e.key === 'R') dispatch({ t: 'ROTATE' });
@@ -143,12 +190,12 @@ export default function App() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [app.screen]);
+  }, [app.screen, veil]);
 
   const screen = () => {
     switch (app.screen.kind) {
       case 'menu':
-        return <Menu dispatch={dispatch} />;
+        return titled ? <Menu dispatch={dispatch} /> : <Title onStart={() => setTitled(true)} />;
       case 'placement':
         return <Placement screen={app.screen} dispatch={dispatch} />;
       case 'game':
@@ -171,6 +218,13 @@ export default function App() {
       {screen()}
       <SfxControl />
       <ScreenshotControl />
+      {veil && (
+        <div
+          className={`depart-veil depart-veil--${veil}`}
+          style={{ animationDuration: veil === 'fall' ? `${DEPART_MS}ms` : undefined }}
+          onAnimationEnd={() => veil === 'lift' && setVeil(null)}
+        />
+      )}
     </>
   );
 }

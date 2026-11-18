@@ -6,6 +6,7 @@ export const SLOT_IDS = [
   'ui.back',
   'ui.toggle',
   'game.start',
+  'game.depart',
   'ship.pickup',
   'ship.rotate',
   'ship.place',
@@ -45,6 +46,8 @@ export interface Beat {
   gain?: number;
   // false for cues designed to fire in rapid streams (hover), exempting them from ducking.
   duck?: boolean;
+  // Also send the cue through the long hall reverb.
+  reverb?: boolean;
 }
 
 // Quiet a fast-repeating cue: floor volume back-to-back, linear recovery to full over
