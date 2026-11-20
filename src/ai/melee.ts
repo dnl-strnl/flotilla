@@ -103,7 +103,8 @@ export function projectObservation(obs: Observation, target: PlayerId): Observat
     turn: s.by === obs.me ? vSelf(s.turn, n, first) : vOther(s.turn, n, first),
   }));
   return {
-    config: obs.config,
+    // The opener's cap is a two-seat rule; a projected duel must not read it.
+    config: { ...obs.config, openerHandicap: false },
     me: 0,
     playerCount: 2,
     turn: vSelf(obs.turn, n, first),
@@ -708,6 +709,9 @@ function turnPlan(
   return best.action;
 }
 
+// Share of ENSIGN's attacking actions that become a random tool once its kit is armed.
+const ENSIGN_TOOL_RATE = 0.25;
+
 export interface MeleeOptions {
   samples?: number;
   // Softmax temperature for target selection; 0 (default) is argmax. See pickByScore.
@@ -729,7 +733,9 @@ export interface MeleeOptions {
 export function makeMelee(rank: BotName, opts: MeleeOptions = {}): Bot {
   const inner = makeBot(rank, { samples: opts.samples ?? 1000 });
   const aux = Math.min(AUX_SAMPLES, opts.samples ?? 1000);
-  const deny = new Set(opts.denyTools ?? []);
+  // COMMANDER never reads sonar, so it is never sold a sweep.
+  const blind: ToolId[] = rank === 'commander' ? ['SCAN', 'ECHO'] : [];
+  const deny = new Set([...(opts.denyTools ?? []), ...blind]);
   const denied = (id: number) => deny.size > 0 && deny.has((decodeAction(id) as { type: ToolId }).type);
   const plans = rank === 'admiral' && (opts.turnPlan ?? true);
   return (obs, legal, rng) => {
@@ -760,6 +766,13 @@ export function makeMelee(rank: BotName, opts: MeleeOptions = {}): Bot {
       if (toolIds.length > 0) {
         const tool = turnPlan(obs, toolIds, target, at, rng, aux, planned);
         if (tool) return tool;
+      }
+      return restamp(planned, at);
+    }
+    // ENSIGN stays random: now and then a tool, fired anywhere legal, never priced or aimed.
+    if (rank === 'ensign') {
+      if (toolIds.length > 0 && attacking && rng() < ENSIGN_TOOL_RATE) {
+        return decodeAction(toolIds[Math.floor(rng() * toolIds.length)]!);
       }
       return restamp(planned, at);
     }

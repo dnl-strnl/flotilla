@@ -6,6 +6,7 @@ import {
   AP_CAP,
   AP_COST,
   AP_FLOOR,
+  OPENER_AP,
   ECHO_SIZE,
   MAX_DECOYS,
   SCAN_SIZE,
@@ -293,6 +294,7 @@ export function RulesPanel(props: { config: Observation['config']; seats: number
             <p>
               AP/turn = ships afloat (max {AP_CAP}, min {AP_FLOOR} so you can always shoot).
               Unspent AP is lost; the turn ends itself once nothing is affordable.
+              {config.openerHandicap && !melee && ` The first player opens on ${OPENER_AP} AP.`}
             </p>
           ) : (
             <p>One shot per turn.</p>

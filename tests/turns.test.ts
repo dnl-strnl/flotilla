@@ -3,12 +3,15 @@ import {
   AP_CAP,
   AP_FLOOR,
   FLEET,
+  OPENER_AP,
   PRESETS,
   budgetFor,
+  createGame,
+  upgradeReplay,
   legalActions,
   legalActionIds,
 } from '../src/engine';
-import { doStep, newGame, pass, run, shot } from './helpers';
+import { TEST_FLEET, doStep, newGame, pass, run, shot } from './helpers';
 
 describe('CLASSIC turn flow (flat 2-AP budget = one shot)', () => {
   it('offers only shots and pass', () => {
@@ -165,5 +168,35 @@ describe('FLOTILLA keeps the turn alive while 1-AP actions remain', () => {
     expect(r.state.ap).toBe(1);
     const types = new Set(legalActions(r.state).map((a) => a.type));
     expect(types).toEqual(new Set(['PING', 'PASS']));
+  });
+});
+
+describe('openerHandicap — the first player opens a duel on OPENER_AP', () => {
+  const fleets = (n: number) => Array.from({ length: n }, () => structuredClone(TEST_FLEET)) as [
+    typeof TEST_FLEET,
+    typeof TEST_FLEET,
+    ...(typeof TEST_FLEET)[],
+  ];
+
+  it('caps turn 1 only: the reply and every later turn get the full budget', () => {
+    const start = createGame(PRESETS.FLOTILLA, fleets(2), 1);
+    expect(start.budget).toBe(OPENER_AP);
+    expect(start.ap).toBe(OPENER_AP);
+    const reply = doStep(start, pass).state;
+    expect(reply.budget).toBe(AP_CAP);
+    expect(doStep(reply, pass).state.budget).toBe(AP_CAP);
+  });
+
+  it('never applies with three fleets', () => {
+    expect(createGame(PRESETS.FLOTILLA, fleets(3), 1).budget).toBe(AP_CAP);
+  });
+
+  it('is off for a replay saved before the rule existed', () => {
+    const { openerHandicap: _, ...old } = PRESETS.FLOTILLA;
+    const upgraded = upgradeReplay({
+      version: 2, config: old as typeof PRESETS.FLOTILLA, seed: 1, firstPlayer: 0,
+      placements: fleets(2), actions: [], digest: '',
+    });
+    expect(upgraded.config.openerHandicap).toBe(false);
   });
 });

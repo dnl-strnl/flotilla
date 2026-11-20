@@ -1,4 +1,4 @@
-import { AP_CAP, AP_COST, AP_FLOOR } from './types';
+import { AP_CAP, AP_COST, AP_FLOOR, OPENER_AP } from './types';
 import type {
   AtLeastTwo,
   Force,
@@ -101,14 +101,17 @@ export function createGame(
   // The length check above is what makes this cast true at runtime.
   const players = placements.map(freshPlayer) as AtLeastTwo<PlayerState>;
   const opener = activePlayerFor(1, players.length, firstPlayer);
+  const full = budgetFor(config, players[opener]!, players.length);
+  // Turn 1 only; every later budget comes from budgetFor in endTurn.
+  const opening = config.openerHandicap && players.length === 2 ? Math.min(full, OPENER_AP) : full;
   return {
     config: { ...config },
     seed,
     firstPlayer,
     turn: 1,
     activePlayer: opener,
-    ap: budgetFor(config, players[opener]!, players.length),
-    budget: budgetFor(config, players[opener]!, players.length),
+    ap: opening,
+    budget: opening,
     movedShips: [],
     pingsThisTurn: 0,
     players,

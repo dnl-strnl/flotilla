@@ -48,6 +48,8 @@ export const ECHO_SIZE = 4;
 export const AP_CAP = 5;
 // Per-turn AP floor = one shot, so a one-ship player can always fire. Tuning knob.
 export const AP_FLOOR = 2;
+// Under `openerHandicap` the first player's opening turn is capped at this (one shell).
+export const OPENER_AP = 2;
 
 // Cell index 0..99; idx = row * 10 + col.
 export type Cell = number;
@@ -116,6 +118,9 @@ export interface GameConfig {
   specialTools: boolean;
   // Rule: while three or more fleets are afloat every one plays at AP_CAP, losses or not.
   meleeFullAp: boolean;
+  // Rule: in a two-seat game the first player's opening turn is capped at OPENER_AP, which
+  // cancels the first-mover edge. Never applies with three or more seats.
+  openerHandicap: boolean;
 }
 
 // AP price of the NEXT PING this turn, given the sweeps already bought. Flat at two seats
@@ -128,9 +133,9 @@ export function pingCostFor(config: GameConfig, playerCount: number, pingsThisTu
 export type PresetName = 'CLASSIC' | 'SALVO' | 'FLOTILLA';
 
 export const PRESETS: Record<PresetName, GameConfig> = {
-  CLASSIC: { salvoBudget: false, movement: false, pings: false, decoys: false, pingEscalates: false, finalDuelFullAp: false, specialTools: false, meleeFullAp: false },
-  SALVO: { salvoBudget: true, movement: false, pings: false, decoys: false, pingEscalates: false, finalDuelFullAp: false, specialTools: false, meleeFullAp: false },
-  FLOTILLA: { salvoBudget: true, movement: true, pings: true, decoys: true, pingEscalates: false, finalDuelFullAp: true, specialTools: true, meleeFullAp: true },
+  CLASSIC: { salvoBudget: false, movement: false, pings: false, decoys: false, pingEscalates: false, finalDuelFullAp: false, specialTools: false, meleeFullAp: false, openerHandicap: false },
+  SALVO: { salvoBudget: true, movement: false, pings: false, decoys: false, pingEscalates: false, finalDuelFullAp: false, specialTools: false, meleeFullAp: false, openerHandicap: true },
+  FLOTILLA: { salvoBudget: true, movement: true, pings: true, decoys: true, pingEscalates: false, finalDuelFullAp: true, specialTools: true, meleeFullAp: true, openerHandicap: true },
 };
 
 export interface Ship {

@@ -267,6 +267,9 @@ export function buildBelief(obs: Observation, opts: SampleOptions, rng: RNG): Be
   }
 
   const hitM = cellMask(intel.hitCells);
+  // A wreck contains the cell its SUNK was called on; unanchored, it wanders onto other hits.
+  const sunkAt = new Map<ShipKind, number>();
+  for (const r of obs.myShots) if (r.result === 'SUNK' && r.sunkShip) sunkAt.set(r.sunkShip, r.cell);
   const contactMasks = new Map(contactPings.map((p) => [p, cellMask(p.answerers)]));
   const countMasks = new Map(countedSweeps.map((p) => [p, cellMask(p.answerers)]));
   const ringMasks = new Map(wakes.map((w) => [w.ring, cellMask(w.ring)]));
@@ -366,8 +369,10 @@ export function buildBelief(obs: Observation, opts: SampleOptions, rng: RNG): Be
           let poolLen = 0;
           if (spec.sunk) {
             // Every cell of a sunk wreck is a recorded hit.
+            const anchor = sunkAt.get(spec.kind);
             for (let i = 0; i < n; i++) {
               const b = i * 4;
+              if (anchor !== undefined && (M[b + (anchor >>> 5)]! & (1 << (anchor & 31))) === 0) continue;
               if (((M[b]! & (~hitM[0]! | o0)) | (M[b + 1]! & (~hitM[1]! | o1)) |
                 (M[b + 2]! & (~hitM[2]! | o2)) | (M[b + 3]! & (~hitM[3]! | o3))) === 0) openIdx[poolLen++] = i;
             }

@@ -22,7 +22,12 @@ export const TEST_FLEET: ShipPlacement[] = [
 ];
 
 export function newGame(config: GameConfig = PRESETS.FLOTILLA, seed = 42): GameState {
-  return createGame(config, [structuredClone(TEST_FLEET), structuredClone(TEST_FLEET)], seed);
+  // Mechanics tests script a full-budget opening; the opener's cap is tested in turns.test.ts.
+  return createGame(
+    { ...config, openerHandicap: false },
+    [structuredClone(TEST_FLEET), structuredClone(TEST_FLEET)],
+    seed,
+  );
 }
 
 const rng = mulberry32(123);

@@ -158,7 +158,7 @@ describe('tool auto-switch and handoff transitions', () => {
 describe('replay playback audio', () => {
   const replay: Replay = {
     version: 2,
-    config: PRESETS.FLOTILLA,
+    config: { ...PRESETS.FLOTILLA, openerHandicap: false },
     seed: 42,
     firstPlayer: 0,
     placements: [structuredClone(TEST_FLEET), structuredClone(TEST_FLEET)],

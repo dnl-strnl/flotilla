@@ -2,6 +2,7 @@ import {
   AP_COST,
   AP_CAP,
   AP_FLOOR,
+  OPENER_AP,
   FLEET,
   encodeAction,
   rngInt,
@@ -163,7 +164,8 @@ export function apForensics(obs: Observation, moveCost: number): { turns: number
     if (t % 2 === myParity) continue;
     turns++;
     const lost = sunkByTurn.filter((st) => st <= t).length;
-    const budget = Math.max(AP_FLOOR, Math.min(AP_CAP, FLEET.length - lost));
+    const capped = t === 1 && obs.config.openerHandicap;
+    const budget = capped ? OPENER_AP : Math.max(AP_FLOOR, Math.min(AP_CAP, FLEET.length - lost));
     const spentOnShells = (shotsPerTurn.get(t) ?? 0) * AP_COST.FIRE;
     if (budget - spentOnShells >= moveCost) slackTurns++;
   }

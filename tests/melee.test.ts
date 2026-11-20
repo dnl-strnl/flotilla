@@ -264,7 +264,8 @@ describe('MELEE replays', () => {
     // it has to re-execute as the two-player game it was.
     const legacy = {
       version: 2 as const,
-      config: { ...PRESETS.FLOTILLA, moveWake: true, makoSprint: false },
+      // openerHandicap undefined: a file this old has no such field.
+      config: { ...PRESETS.FLOTILLA, openerHandicap: undefined, moveWake: true, makoSprint: false },
       seed: SEED,
       firstPlayer: 0,
       autoEndTurn: true,

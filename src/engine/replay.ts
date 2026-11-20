@@ -62,7 +62,8 @@ export interface ReplayFrame {
 // Replays saved before the SHOT → FIRE rename spell the action 'SHOT' and its event 'shot'.
 // Replays saved before specialTools was a flag lack it; three-seat games then were all
 // FLOTILLA, which has it on, and two-seat games never read it. meleeFullAp likewise, but a
-// three-seat replay saved under the old floor-4 rule will not reproduce.
+// three-seat replay saved under the old floor-4 rule will not reproduce. openerHandicap
+// defaults OFF: older duels opened on a full budget.
 // Pure: returns an upgraded copy, the input is untouched; current replays pass through.
 export function upgradeReplay(replay: Replay): Replay {
   const legacy = (t: string, from: string, to: string) => (t === from ? to : t);
@@ -72,6 +73,7 @@ export function upgradeReplay(replay: Replay): Replay {
       ...replay.config,
       specialTools: replay.config.specialTools ?? true,
       meleeFullAp: replay.config.meleeFullAp ?? true,
+      openerHandicap: replay.config.openerHandicap ?? false,
     },
     actions: replay.actions.map(
       (a) => ({ ...a, type: legacy(a.type, 'SHOT', 'FIRE') }) as Action,

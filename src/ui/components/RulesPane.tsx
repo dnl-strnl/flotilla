@@ -3,6 +3,7 @@ import {
   AP_CAP,
   AP_COST,
   AP_FLOOR,
+  OPENER_AP,
   ECHO_SIZE,
   FLEET,
   MAX_DECOYS,
@@ -238,6 +239,8 @@ export function RulesPane(props: {
                     at {AP_FLOOR}. Damage degrades your tempo, but a surviving fleet can always
                     return fire. Spend AP one action at a time — you see each result before
                     choosing the next.
+                    {config.salvoBudget && config.openerHandicap &&
+                      ` Whoever moves first opens on ${OPENER_AP} AP.`}
                   </p>
                 </div>
 

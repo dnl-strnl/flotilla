@@ -434,6 +434,8 @@ export function buildShotExclusions(
     }
     // A stale once-shot "hit" stays targetable: one re-shot resolves it.
   }
+  // A provably sunk hull is never worth another shell.
+  for (const cell of sunkHitCells(obs)) exclude.add(cell);
   return exclude;
 }
 

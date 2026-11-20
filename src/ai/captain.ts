@@ -51,6 +51,8 @@ export interface CaptainTuning {
   // Minimum exposure drop for an evasive MOVE (deliberately low: CAPTAIN slides on thin
   // margins).
   defEpsilon: number;
+  // Evasive slides per turn; uncapped, a hunted CAPTAIN dodges with the whole budget.
+  evasionsPerTurn: number;
   // MC samples for the opponent-belief (threat) model behind evasion.
   threatSamples: number;
   // Penalty per vacated (wake) cell (a sideways step leaks the whole footprint, an
@@ -86,6 +88,7 @@ const CAPTAIN_TUNING: CaptainTuning = {
   dangerWindow: 2,
   endangeredBonus: 0.08,
   defEpsilon: 0.015,
+  evasionsPerTurn: 1,
   threatSamples: 200,
   wakeLeakWeight: 0.01,
   shotRepeatWindow: 8,
@@ -144,7 +147,8 @@ export function makeCaptain(samples = CAPTAIN_TUNING.samples, tuning: Tuning = C
       if (decoy) return decoy;
 
       // 2. Then hull safety, once they've fired (before that their belief is flat).
-      if (obs.shotsAgainstMe.length > 0 && anyMoveLegal(legalSet) && obs.ap >= AP_COST.MOVE) {
+      const mayEvade = obs.movedShips.length < tuning.evasionsPerTurn;
+      if (mayEvade && obs.shotsAgainstMe.length > 0 && anyMoveLegal(legalSet) && obs.ap >= AP_COST.MOVE) {
         const evade = pickEvasiveMove(obs, threatFor(obs, rng), legalSet, tuning, rng);
         if (evade) return evade.action;
       }

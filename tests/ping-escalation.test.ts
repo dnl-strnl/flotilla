@@ -77,7 +77,7 @@ describe('pingEscalates', () => {
     for (let pings = 0; pings < 4; pings++) {
       expect(pingCostFor(ON, 2, pings)).toBe(AP_COST.PING);
     }
-    const duel = createGame(ON, [structuredClone(TEST_FLEET), structuredClone(TEST_FLEET)], 7);
+    const duel = createGame({ ...ON, openerHandicap: false }, [structuredClone(TEST_FLEET), structuredClone(TEST_FLEET)], 7);
     const after = play(duel, [ping(0), ping(55)]);
     expect(after.ap).toBe(duel.budget - 2 * AP_COST.PING);
   });
